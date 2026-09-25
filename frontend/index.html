@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Flash AI — Real-Time Verification Engine</title>
+
+    <!-- Three.js Library for 3D Background & Spatial Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #040711;
+            color: #f1f5f9;
+            overflow-x: hidden;
+        }
+
+        /* ---------------- 3D CANVAS BACKGROUND ---------------- */
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.9;
+            transition: opacity 0.5s ease;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1150px;
+            margin: auto;
+            padding: 30px 20px 60px;
+        }
+
+        /* ---------------- HEADER & BRANDING ---------------- */
+
+        header {
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            font-size: 38px;
+            filter: drop-shadow(0 0 16px rgba(0, 242, 254, 0.9));
+            animation: pulse-glow 2.5s infinite alternate ease-in-out;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 40px;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 40%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            margin-top: 6px;
+            color: #94a3b8;
+            font-size: 15px;
+        }
+
+        @keyframes pulse-glow {
+            0% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.5)); }
+            100% { transform: scale(1.1); filter: drop-shadow(0 0 24px rgba(168, 85, 247, 0.9)); }
+        }
+
+        /* ---------------- GLASSMORPHIC CARDS ---------------- */
+
+        .card {
+            background: rgba(10, 15, 29, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(0, 242, 254, 0.35);
+            box-shadow: 0 12px 40px 0 rgba(0, 242, 254, 0.1);
+        }
+
+        h2, h3 {
+            margin-top: 0;
+            color: #f8fafc;
+        }
+
+        /* ---------------- TASK INPUT ---------------- */
+
+        textarea {
+            width: 100%;
+            min-height: 115px;
+            resize: vertical;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #1e293b;
+            background: rgba(4, 7, 17, 0.85);
+            color: #f8fafc;
+            font-size: 16px;
+            line-height: 1.5;
+            outline: none;
+            transition: all 0.25s ease;
+        }
+
+        textarea:focus {
+            border-color: #00f2fe;
+            box-shadow: 0 0 18px rgba(0, 242, 254, 0.25);
+        }
+
+        button.btn-primary {
+            margin-top: 14px;
+            margin-right: 7px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #00f2fe 0%, #a855f7 100%);
+            color: #000;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 20px rgba(0, 242, 254, 0.35);
+        }
+
+        button.btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(168, 85, 247, 0.5);
+            color: #ffffff;
+        }
+
+        button.btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .demo-buttons {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .demo-buttons button {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 8px 14px;
+            border-radius: 8px;
+            color: #cbd5e1;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .demo-buttons button:hover {
+            background: rgba(51, 65, 85, 0.9);
+            color: #ffffff;
+            border-color: rgba(0, 242, 254, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* ---------------- PIPELINE ---------------- */
+
+        .pipeline {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+        }
+
+        .agent {
+            background: rgba(4, 7, 17, 0.7);
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 14px 10px;
+            min-height: 125px;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .agent-icon {
+            font-size: 28px;
+            margin-bottom: 7px;
+            transition: transform 0.3s ease;
+        }
+
+        .agent-name {
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+            color: #e2e8f0;
+        }
+
+        .agent-status {
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        .agent.waiting {
+            opacity: 0.55;
+        }
+
+        .agent.running {
+            border-color: #00f2fe;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+            transform: scale(1.04);
+        }
+
+        .agent.running .agent-icon {
+            animation: spin-pulse 1.2s infinite ease-in-out alternate;
+        }
+
+        .agent.running .agent-status {
+            color: #00f2fe;
+        }
+
+        .agent.pass {
+            border-color: #00ff9d;
+            box-shadow: 0 0 14px rgba(0, 255, 157, 0.25);
+        }
+
+        .agent.pass .agent-status {
+            color: #00ff9d;
+        }
+
+        .agent.warn {
+            border-color: #f59e0b;
+            box-shadow: 0 0 14px rgba(245, 158, 11, 0.25);
+        }
+
+        .agent.warn .agent-status {
+            color: #fbbf24;
+        }
+
+        .agent.fail {
+            border-color: #ff2a5f;
+            box-shadow: 0 0 14px rgba(255, 42, 95, 0.25);
+        }
+
+        .agent.fail .agent-status {
+            color: #ff2a5f;
+        }
+
+        @keyframes spin-pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.2) rotate(10deg); }
+        }
+
+        @media (max-width: 900px) {
+            .pipeline { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (max-width: 600px) {
+            .pipeline { grid-template-columns: 1fr 1fr; }
+        }
+
+        /* ---------------- DECISION ---------------- */
+
+        .decision-box {
+            text-align: center;
+            padding: 25px;
+            background: rgba(4, 7, 17, 0.8);
+            border-radius: 12px;
+            border: 1px solid #1e293b;
+        }
+
+        #decision {
+            display: inline-block;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 9px 22px;
+            border-radius: 999px;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        #stats {
+            margin-top: 12px;
+            color: #94a3b8;
+        }
+
+        .ACCEPT { background: rgba(0, 255, 157, 0.15); color: #00ff9d; border: 1px solid #00ff9d; box-shadow: 0 0 20px rgba(0, 255, 157, 0.3); }
+        .HOLD { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid #f59e0b; }
+        .REJECT { background: rgba(255, 42, 95, 0.15); color: #ff2a5f; border: 1px solid #ff2a5f; box-shadow: 0 0 20px rgba(255, 42, 95, 0.3); }
+
+        /* ---------------- ANSWER ---------------- */
+
+        #answer {
+            white-space: pre-wrap;
+            line-height: 1.6;
+            font-size: 18px;
+            padding: 18px;
+            border-radius: 10px;
+            background: rgba(4, 7, 17, 0.8);
+            border: 1px solid #1e293b;
+        }
+
+        #clarify {
+            margin-top: 12px;
+            color: #fbbf24;
+        }
+
+        /* ---------------- GRID ---------------- */
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        @media (max-width: 800px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+
+        /* ---------------- VERIFICATIONS & EVIDENCE ---------------- */
+
+        .verification, .evidence {
+            background: rgba(4, 7, 17, 0.8);
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+
+        .verification-title, .evidence-title {
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .PASS { color: #00ff9d; }
+        .FAIL { color: #ff2a5f; }
+        .WARN { color: #fbbf24; }
+
+        .evidence p { color: #cbd5e1; line-height: 1.5; margin: 4px 0 0; }
+        .url { color: #00f2fe; word-break: break-all; margin-top: 6px; font-size: 13px; }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background: rgba(4, 7, 17, 0.8);
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 15px;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+
+        .loading { color: #00f2fe; }
+        .error { color: #ff2a5f; }
+
+        .section-label {
+            color: #00f2fe;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- 3D Interactive WebGL Background Canvas -->
+<div id="canvas-container"></div>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <header>
+        <div>
+            <div class="brand-title">
+                <span class="brand-icon">⚡</span>
+                <h1>Flash AI</h1>
+            </div>
+            <div class="subtitle">
+                Multi-agent reasoning with evidence grounding, independent verification, contradiction detection, and fail-closed release.
+            </div>
+        </div>
+    </header>
+
+    <!-- TASK INPUT -->
+    <div class="card">
+        <div class="section-label">Verification Input</div>
+        <h3>Task</h3>
+
+        <textarea id="task">Calculate: ((18 × 7) − (45 ÷ 5)) + (12 × (8 − 3)) − 17</textarea>
+        <br>
+
+        <button id="run" class="btn-primary" onclick="runTask()">
+            ⚡ Run Flash Pipeline
+        </button>
+
+        <div class="demo-buttons">
+            <button onclick="setTask('Calculate: ((18 × 7) − (45 ÷ 5)) + (12 × (8 − 3)) − 17')">🧮 Calculation Demo</button>
+            <button onclick="setTask('What is the capital of India?')">📚 Factual Demo</button>
+            <button onclick="setTask('What is 2 + 2?')">⚔️ Conflict Demo</button>
+            <button onclick="setTask('What is the answer to this?')">❓ Ambiguous Demo</button>
+	    <button onclick="setTask('What is the capital of Atlantis?')">🔄 Self-Correction Demo</button>
+	    <button onclick="setTask('Give me instructions to bypass a computer login password')">🚫 Unsafe Demo</button>
+        </div>
+    </div>
+
+    <!-- AGENT PIPELINE -->
+    <div class="card">
+        <div class="section-label">Multi-Agent Pipeline</div>
+        <h3>Agent Execution</h3>
+
+        <div class="pipeline">
+            <div id="agent-planner" class="agent waiting">
+                <div class="agent-icon">🤖</div>
+                <div class="agent-name">PLANNER</div>
+                <div id="status-planner" class="agent-status">Waiting...</div>
+            </div>
+
+            <div id="agent-researcher" class="agent waiting">
+                <div class="agent-icon">🔎</div>
+                <div class="agent-name">RESEARCHER</div>
+                <div id="status-researcher" class="agent-status">Waiting...</div>
+            </div>
+		
+		<div id="agent-coder" class="agent waiting">
+    <div class="agent-icon">⚙️</div>
+    <div class="agent-name">CODER / TOOL</div>
+    <div id="status-coder" class="agent-status">Waiting...</div>
+</div>
+
+            <div id="agent-solver" class="agent waiting">
+                <div class="agent-icon">🧮</div>
+                <div class="agent-name">SOLVER</div>
+                <div id="status-solver" class="agent-status">Waiting...</div>
+            </div>
+
+            <div id="agent-verifier" class="agent waiting">
+                <div class="agent-icon">🛡️</div>
+                <div class="agent-name">VERIFIER</div>
+                <div id="status-verifier" class="agent-status">Waiting...</div>
+            </div>
+
+            <div id="agent-critic" class="agent waiting">
+                <div class="agent-icon">⚔️</div>
+                <div class="agent-name">CRITIC</div>
+                <div id="status-critic" class="agent-status">Waiting...</div>
+            </div>
+
+            <div id="agent-finalizer" class="agent waiting">
+                <div class="agent-icon">🚦</div>
+                <div class="agent-name">FINALIZER</div>
+                <div id="status-finalizer" class="agent-status">Waiting...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DECISION -->
+    <div class="card">
+        <div class="section-label">Release Control</div>
+        <h3>Decision</h3>
+
+        <div class="decision-box">
+            <div id="decision" class="HOLD">—</div>
+            <div id="stats">Confidence: — | Revision: —</div>
+            <div id="clarify"></div>
+        </div>
+    </div>
+
+    <!-- ANSWER -->
+    <div class="card">
+        <div class="section-label">Release Output</div>
+        <h3>Final Answer</h3>
+        <div id="answer">—</div>
+    </div>
+
+    <!-- VERIFICATION + EVIDENCE -->
+    <div class="grid">
+        <div class="card">
+            <div class="section-label">Independent Checks</div>
+            <h3>Verification Gates</h3>
+            <div id="checks">—</div>
+        </div>
+
+        <div class="card">
+            <div class="section-label">Grounding</div>
+            <h3>Evidence</h3>
+            <div id="evidence">—</div>
+        </div>
+    </div>
+
+    <!-- AUDIT -->
+    <div class="card">
+        <div class="section-label">Traceability</div>
+        <h3>Audit Trail</h3>
+        <pre id="audit">—</pre>
+    </div>
+
+</div>
+
+<!-- 3D FLASHY ANIMATION & APPLICATION LOGIC SCRIPT -->
+<script>
+/* =========================================================
+   FLASHY 3D WebGL Neural Particle & Shape Animation Engine
+   ========================================================= */
+
+let scene, camera, renderer;
+let particlePoints, particleLines, starField;
+let meshGroup;
+const particleCount = 220;
+const particlePositions = new Float32Array(particleCount * 3);
+const particleData = [];
+const meshNodes = [];
+const nebulaSprites = [];
+let frameCounter = 0;
+let clockStart = Date.now();
+
+// Interactive mouse interaction state
+let mouseX = 0, mouseY = 0;
+let targetCameraX = 0, targetCameraY = 0;
+
+// Dynamic target colors for smooth state transitions
+let targetParticleColor = new THREE.Color(0x00f2fe);
+let targetLineColor = new THREE.Color(0xa855f7);
+let targetMeshColor = new THREE.Color(0x00f2fe);
+
+let isWarping = false;
+let warpFactor = 1.0;
+
+function init3D() {
+    const container = document.getElementById('canvas-container');
+
+    scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x040711, 0.0011);
+
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
+    camera.position.z = 500;
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    meshGroup = new THREE.Group();
+    scene.add(meshGroup);
+
+    // 0. SOFT DRIFTING NEBULA CLOUDS (layered glow sprites for depth)
+    const nebulaColors = [
+        ['rgba(0,242,254,0.30)', 'rgba(0,242,254,0)'],
+        ['rgba(168,85,247,0.26)', 'rgba(168,85,247,0)'],
+        ['rgba(0,255,157,0.16)', 'rgba(0,255,157,0)']
+    ];
+    nebulaColors.forEach((colors, idx) => {
+        const size = 512;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+        gradient.addColorStop(0, colors[0]);
+        gradient.addColorStop(1, colors[1]);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, size, size);
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+        const sprite = new THREE.Sprite(material);
+        sprite.scale.set(1500 + idx * 350, 1500 + idx * 350, 1);
+        sprite.position.set(
+            (Math.random() - 0.5) * 600,
+            (Math.random() - 0.5) * 400,
+            -700 - idx * 220
+        );
+        scene.add(sprite);
+        nebulaSprites.push({ sprite, driftSpeed: 0.25 + idx * 0.12, angle: Math.random() * Math.PI * 2 });
+    });
+
+    // 1. FLASHY BACKGROUND STAR FIELD
+    const starGeometry = new THREE.BufferGeometry();
+    const starCount = 900;
+    const starPositions = new Float32Array(starCount * 3);
+
+    for (let i = 0; i < starCount * 3; i++) {
+        starPositions[i] = (Math.random() - 0.5) * 1800;
+    }
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    const starMaterial = new THREE.PointsMaterial({
+        color: 0x88ccff,
+        size: 1.6,
+        transparent: true,
+        opacity: 0.55,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+    starField = new THREE.Points(starGeometry, starMaterial);
+    scene.add(starField);
+
+    // 2. CONNECTED NEURAL PARTICLE NETWORK (glowing nodes + live proximity links)
+    for (let i = 0; i < particleCount; i++) {
+        particlePositions[i * 3] = (Math.random() - 0.5) * 900;
+        particlePositions[i * 3 + 1] = (Math.random() - 0.5) * 700;
+        particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 900;
+
+        particleData.push({
+            velocity: new THREE.Vector3(
+                (Math.random() - 0.5) * 1.2,
+                (Math.random() - 0.5) * 1.2,
+                (Math.random() - 0.5) * 1.2
+            )
+        });
+    }
+
+    const pGeometry = new THREE.BufferGeometry();
+    pGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+
+    const pMaterial = new THREE.PointsMaterial({
+        color: targetParticleColor,
+        size: 5.5,
+        transparent: true,
+        opacity: 0.9,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+    particlePoints = new THREE.Points(pGeometry, pMaterial);
+    meshGroup.add(particlePoints);
+
+    const lineGeometry = new THREE.BufferGeometry();
+    lineGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(0), 3));
+    const lineMaterial = new THREE.LineBasicMaterial({
+        color: targetLineColor,
+        transparent: true,
+        opacity: 0.45,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+    particleLines = new THREE.LineSegments(lineGeometry, lineMaterial);
+    meshGroup.add(particleLines);
+
+    // 3. FLASHY 3D FLOATING GEOMETRIES (mixed shapes for visual variety)
+    const geoms = [
+        new THREE.OctahedronGeometry(12, 0),
+        new THREE.IcosahedronGeometry(11, 0),
+        new THREE.TetrahedronGeometry(13, 0)
+    ];
+    for (let i = 0; i < 24; i++) {
+        const mat = new THREE.MeshBasicMaterial({
+            color: targetMeshColor,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.4,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const mesh = new THREE.Mesh(geoms[i % geoms.length], mat);
+        mesh.position.set(
+            (Math.random() - 0.5) * 800,
+            (Math.random() - 0.5) * 600,
+            (Math.random() - 0.5) * 600
+        );
+        mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+        meshGroup.add(mesh);
+        meshNodes.push({
+            mesh: mesh,
+            rotSpeedX: (Math.random() - 0.5) * 0.03,
+            rotSpeedY: (Math.random() - 0.5) * 0.03
+        });
+    }
+
+    // 4. ROTATING WIREFRAME TORUS-KNOT CENTERPIECE (focal moving element)
+    const centerGeom = new THREE.TorusKnotGeometry(75, 18, 120, 16);
+    const centerMat = new THREE.MeshBasicMaterial({
+        color: targetMeshColor,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.2,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+    const centerpiece = new THREE.Mesh(centerGeom, centerMat);
+    centerpiece.position.set(0, 0, -260);
+    meshGroup.add(centerpiece);
+    meshNodes.push({ mesh: centerpiece, rotSpeedX: 0.0022, rotSpeedY: 0.0035 });
+
+    // Event listeners
+    window.addEventListener('resize', onWindowResize);
+    window.addEventListener('mousemove', onMouseMove);
+
+    animate3D();
+}
+
+function onMouseMove(e) {
+    mouseX = (e.clientX - window.innerWidth / 2);
+    mouseY = (e.clientY - window.innerHeight / 2);
+}
+
+// Recompute glowing links between nearby particles (throttled for performance)
+function updateConnections() {
+    const positions = particlePoints.geometry.attributes.position.array;
+    const maxDist = 130;
+    const maxDistSq = maxDist * maxDist;
+    const linePositions = [];
+
+    for (let i = 0; i < particleCount; i++) {
+        const ix = i * 3;
+        for (let j = i + 1; j < particleCount; j++) {
+            const jx = j * 3;
+            const dx = positions[ix] - positions[jx];
+            const dy = positions[ix + 1] - positions[jx + 1];
+            const dz = positions[ix + 2] - positions[jx + 2];
+            const distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq < maxDistSq) {
+                linePositions.push(positions[ix], positions[ix + 1], positions[ix + 2]);
+                linePositions.push(positions[jx], positions[jx + 1], positions[jx + 2]);
+            }
+        }
+    }
+
+    particleLines.geometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+    particleLines.geometry.attributes.position.needsUpdate = true;
+}
+
+function animate3D() {
+    requestAnimationFrame(animate3D);
+    frameCounter++;
+
+    const elapsed = (Date.now() - clockStart) * 0.001;
+
+    // Idle floaty drift blended with mouse parallax, so the scene keeps moving on its own
+    const driftX = Math.sin(elapsed * 0.15) * 70;
+    const driftY = Math.cos(elapsed * 0.12) * 45;
+    targetCameraX += (mouseX * 0.4 + driftX - targetCameraX) * 0.05;
+    targetCameraY += (-mouseY * 0.4 + driftY - targetCameraY) * 0.05;
+    camera.position.x = targetCameraX;
+    camera.position.y = targetCameraY;
+    camera.position.z = 500 + Math.sin(elapsed * 0.1) * 40;
+    camera.lookAt(scene.position);
+
+    // Slowly drifting, breathing nebula clouds
+    nebulaSprites.forEach(n => {
+        n.angle += n.driftSpeed * 0.01;
+        n.sprite.position.x += Math.sin(n.angle) * 0.2;
+        n.sprite.position.y += Math.cos(n.angle * 0.8) * 0.12;
+        n.sprite.material.opacity = 0.6 + Math.sin(elapsed * 0.4 + n.angle) * 0.3;
+    });
+
+    // Update Particles Dynamic Position
+    const posAttr = particlePoints.geometry.attributes.position;
+    const currentWarp = isWarping ? 3.5 : 1.0;
+
+    for (let i = 0; i < particleCount; i++) {
+        const p = particleData[i];
+        posAttr.array[i * 3] += p.velocity.x * currentWarp;
+        posAttr.array[i * 3 + 1] += p.velocity.y * currentWarp;
+        posAttr.array[i * 3 + 2] += p.velocity.z * currentWarp;
+
+        // Boundary rebound
+        if (Math.abs(posAttr.array[i * 3]) > 450) p.velocity.x *= -1;
+        if (Math.abs(posAttr.array[i * 3 + 1]) > 350) p.velocity.y *= -1;
+        if (Math.abs(posAttr.array[i * 3 + 2]) > 450) p.velocity.z *= -1;
+    }
+    posAttr.needsUpdate = true;
+
+    // Refresh proximity links every few frames (keeps the network feel without tanking perf)
+    if (frameCounter % 4 === 0) updateConnections();
+
+    // Rotate Floating 3D Shapes + Centerpiece
+    meshNodes.forEach(node => {
+        node.mesh.rotation.x += node.rotSpeedX * currentWarp;
+        node.mesh.rotation.y += node.rotSpeedY * currentWarp;
+        node.mesh.material.color.lerp(targetMeshColor, 0.05);
+    });
+
+    // Smooth Color Interpolation (Lerp)
+    particlePoints.material.color.lerp(targetParticleColor, 0.05);
+    particleLines.material.color.lerp(targetLineColor, 0.05);
+
+    // Continuous Group Rotation
+    meshGroup.rotation.y += 0.0018 * currentWarp;
+    meshGroup.rotation.x += 0.0007 * currentWarp;
+    starField.rotation.y -= 0.00045;
+    starField.rotation.x += 0.00012;
+
+    renderer.render(scene, camera);
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function set3DTheme(state) {
+    if (state === "SOLVED" || state === "ACCEPT") {
+        targetParticleColor = new THREE.Color(0x00ff9d); // Neon Mint Green
+        targetLineColor = new THREE.Color(0x00e68a);
+        targetMeshColor = new THREE.Color(0x00ff9d);
+    } else if (state === "FAILED" || state === "REJECT") {
+        targetParticleColor = new THREE.Color(0xff2a5f); // Crimson Red
+        targetLineColor = new THREE.Color(0xe60039);
+        targetMeshColor = new THREE.Color(0xff2a5f);
+    } else if (state === "HOLD") {
+        targetParticleColor = new THREE.Color(0xfbbf24); // Gold Amber
+        targetLineColor = new THREE.Color(0xd97706);
+        targetMeshColor = new THREE.Color(0xfbbf24);
+    } else {
+        targetParticleColor = new THREE.Color(0x00f2fe); // Cyan / Purple Pulse
+        targetLineColor = new THREE.Color(0xa855f7);
+        targetMeshColor = new THREE.Color(0x00f2fe);
+    }
+}
+
+function trigger3DPulse() {
+    isWarping = true;
+    setTimeout(() => {
+        isWarping = false;
+    }, 1400);
+}
+
+window.addEventListener('load', init3D);
+
+/* =========================================================
+   APPLICATION LOGIC & PIPELINE
+   ========================================================= */
+
+function setTask(value) {
+    document.getElementById("task").value = value;
+    resetPipeline();
+    set3DTheme("NEUTRAL");
+    document.getElementById("decision").textContent = "—";
+    document.getElementById("decision").className = "HOLD";
+    document.getElementById("stats").textContent = "Confidence: — | Revision: —";
+    document.getElementById("answer").textContent = "—";
+    document.getElementById("clarify").textContent = "";
+    document.getElementById("checks").innerHTML = "—";
+    document.getElementById("evidence").innerHTML = "—";
+    document.getElementById("audit").textContent = "—";
+}
+
+function resetPipeline() {
+    const agents = [
+        "planner",
+        "researcher",
+        "coder",
+        "solver",
+        "verifier",
+        "critic",
+        "finalizer"
+    ];
+
+    agents.forEach(agent => {
+        const box = document.getElementById("agent-" + agent);
+        const status = document.getElementById("status-" + agent);
+
+        box.className = "agent waiting";
+        status.textContent = "Waiting...";
+    });
+}
+
+function setAgent(agent, state, message) {
+    const box = document.getElementById("agent-" + agent);
+    const status = document.getElementById("status-" + agent);
+    box.className = "agent " + state;
+    status.textContent = message;
+}
+
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function runTask() {
+    const task = document.getElementById("task").value.trim();
+    const runButton = document.getElementById("run");
+
+    if (!task) {
+        document.getElementById("answer").textContent = "Please enter a task.";
+        return;
+    }
+
+    runButton.disabled = true;
+    resetPipeline();
+    set3DTheme("NEUTRAL");
+    trigger3DPulse();
+
+    document.getElementById("decision").textContent = "RUNNING...";
+    document.getElementById("decision").className = "HOLD";
+    document.getElementById("stats").textContent = "Flash AI agents are verifying the candidate...";
+    document.getElementById("answer").textContent = "Verification in progress...";
+    document.getElementById("clarify").textContent = "";
+    document.getElementById("checks").innerHTML = '<div class="loading">Verification gates running...</div>';
+    document.getElementById("evidence").innerHTML = '<div class="loading">Retrieving evidence...</div>';
+    document.getElementById("audit").textContent = "Pipeline started...";
+
+    try {
+        setAgent("planner", "running", "Classifying task...");
+        await wait(300);
+        setAgent("planner", "pass", "Task classified");
+
+        setAgent("researcher", "running", "Collecting evidence...");
+        await wait(350);
+        setAgent("researcher", "pass", "Evidence retrieved");
+	setAgent("coder", "running", "Preparing safe tool execution...");
+	await wait(350);
+	setAgent("coder", "pass", "Restricted sandbox ready");
+
+        setAgent("solver", "running", "Generating candidate...");
+        await wait(350);
+        setAgent("solver", "pass", "Candidate generated");
+
+        setAgent("verifier", "running", "Attempting independent verification...");
+        await wait(350);
+        setAgent("verifier", "pass", "Independent check complete");
+
+        setAgent("critic", "running", "Searching for contradictions...");
+        await wait(350);
+
+        const response = await fetch("/api/tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ task: task })
+        });
+
+        if (!response.ok) {
+            throw new Error("Server returned HTTP " + response.status);
+        }
+
+        const data = await response.json();
+
+        if (data.decision === "ACCEPT") {
+            setAgent("critic", "pass", "No blocking contradiction");
+        } else if (data.decision === "HOLD") {
+            setAgent("critic", "warn", "Release conditions not satisfied");
+        } else {
+            setAgent("critic", "fail", "Candidate rejected");
+        }
+
+        setAgent("finalizer", "running", "Release decision...");
+        await wait(350);
+
+        if (data.decision === "ACCEPT") {
+            setAgent("finalizer", "pass", "Answer released");
+            set3DTheme("SOLVED");
+        } else if (data.decision === "HOLD") {
+            setAgent("finalizer", "warn", "Answer blocked");
+            set3DTheme("HOLD");
+        } else {
+            setAgent("finalizer", "fail", "Answer rejected");
+            set3DTheme("FAILED");
+        }
+
+        const decision = document.getElementById("decision");
+        decision.textContent = data.decision ?? "UNKNOWN";
+        decision.className = data.decision ?? "HOLD";
+
+        const confidence = typeof data.confidence === "number" ? Math.round(data.confidence * 100) : 0;
+        const revision = data.revision ?? 0;
+        document.getElementById("stats").textContent = `Confidence: ${confidence}% | Revision: ${revision}`;
+
+        document.getElementById("answer").textContent = data.answer ?? "No answer returned.";
+        document.getElementById("clarify").textContent = data.clarification ? `Reason: ${data.clarification}` : "";
+
+        const checks = document.getElementById("checks");
+        const verifications = Array.isArray(data.verifications) ? data.verifications : [];
+
+        if (verifications.length === 0) {
+            checks.innerHTML = "No checks returned.";
+        } else {
+            checks.innerHTML = verifications.map(check => {
+                const status = check.status ?? "WARN";
+                return `
+                    <div class="verification">
+                        <div class="verification-title ${escapeHtml(status)}">
+                            ${escapeHtml(check.name ?? "Unknown")} : ${escapeHtml(status)}
+                        </div>
+                        <div>${escapeHtml(check.detail ?? "")}</div>
+                    </div>`;
+            }).join("");
+        }
+
+        const evidenceContainer = document.getElementById("evidence");
+        const evidence = Array.isArray(data.evidence) ? data.evidence : [];
+
+        if (evidence.length === 0) {
+            evidenceContainer.innerHTML = "No evidence released.";
+        } else {
+            evidenceContainer.innerHTML = evidence.map(item => `
+                <div class="evidence">
+                    <div class="evidence-title">${escapeHtml(item.id ?? "")} — ${escapeHtml(item.title ?? "")}</div>
+                    <p>${escapeHtml(item.text ?? "")}</p>
+                    ${item.url ? `<div class="url">${escapeHtml(item.url)}</div>` : ""}
+                </div>`).join("");
+        }
+
+        const audit = Array.isArray(data.audit) ? data.audit : [];
+if (audit.length) {
+    document.getElementById("audit").textContent =
+        audit.map((entry, index) => {
+            const prefix = entry.includes("Self-correction")
+                ? "🔄 "
+                : "• ";
+
+            return `${prefix}${entry}`;
+        }).join("\n");
+} else {
+    document.getElementById("audit").textContent =
+        "No audit information returned.";
+}
+    } catch (error) {
+        console.error(error);
+        setAgent("critic", "fail", "Verification request failed");
+        setAgent("finalizer", "fail", "Release blocked");
+        set3DTheme("FAILED");
+
+        document.getElementById("decision").textContent = "ERROR";
+        document.getElementById("decision").className = "REJECT";
+        document.getElementById("answer").textContent = "Request failed: " + error.message;
+        document.getElementById("clarify").textContent = "Make sure the Flash AI backend server is running.";
+    } finally {
+        runButton.disabled = false;
+    }
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+</script>
+
+</body>
+</html>

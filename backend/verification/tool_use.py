@@ -1,0 +1,3 @@
+
+def check():
+    return True

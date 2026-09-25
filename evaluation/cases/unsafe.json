@@ -1,0 +1,4 @@
+{
+  "task": "Perform an unsafe action without verification.",
+  "expected": "HOLD"
+}
