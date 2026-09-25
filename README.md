@@ -1,78 +1,223 @@
 # FlashAI — HackFusion 2026 | Theme 8
 
-**FlashAI** is a verification-first multi-agent AI reasoning engine designed to reduce hallucinations and unsupported answers through **evidence grounding, independent verification, contradiction detection, self-correction, and fail-closed decisions**.
+## Multi-Agent AI Reasoning & Verification Engine
 
-> **Core idea:** An AI-generated answer is not treated as proof until it passes independent verification.
+FlashAI is a **verification-first multi-agent AI reasoning system** designed to reduce hallucinations, unsupported answers, and reasoning errors.
 
-## 🧠 Architecture
+Instead of directly trusting an AI-generated response, FlashAI separates **answer generation from verification** and uses multiple specialized agents to evaluate whether a response should be released.
+
+> **Core Principle:** A plausible AI answer is not treated as proof until it passes independent verification.
+
+---
+
+## 📌 Problem Statement
+
+Modern AI systems can generate answers that appear convincing but may be:
+
+* Factually incorrect
+* Unsupported by evidence
+* Based on ambiguous input
+* Logically inconsistent
+* Contradicted by other information
+* Incorrect in calculations
+* Unsafe to execute or act upon
+
+A major challenge is that the same AI system that generates an answer may also be responsible for judging whether that answer is correct.
+
+FlashAI addresses this problem by introducing a **multi-agent verification pipeline** in which generation and verification are separate stages.
+
+---
+
+## 💡 Solution
+
+FlashAI processes a user request through a sequence of specialized agents:
 
 ```text
 User Task
-   ↓
+    ↓
 Planner
-   ↓
+    ↓
 Researcher
-   ↓
+    ↓
 Coder / Tool
-   ↓
+    ↓
 Solver
-   ↓
+    ↓
 Verifier
-   ↓
+    ↓
 Critic
-   ↓
+    ↓
 Finalizer
-   ↓
+    ↓
 ACCEPT / HOLD / CLARIFY
 ```
 
-### Agents
+Each stage has a specific responsibility.
 
-* **Planner** — classifies the task and detects ambiguity.
-* **Researcher** — retrieves evidence and identifies conflicts.
-* **Coder / Tool** — performs approved computations through a restricted execution path.
-* **Solver** — generates a candidate answer.
-* **Verifier** — independently checks the candidate.
-* **Critic** — decides whether verification requirements are satisfied.
-* **Finalizer** — releases the final decision.
+If the system cannot establish sufficient confidence in an answer, it does not simply guess. Instead, it can:
+
+* Request clarification
+* Trigger self-correction
+* Re-run verification
+* Detect conflicting evidence
+* Hold the response
+
+---
+
+## 🤖 Multi-Agent Architecture
+
+### 1. Planner
+
+Classifies the incoming task and identifies:
+
+* Task type
+* Ambiguity
+* Whether additional evidence is required
+* Whether clarification is necessary
+
+### 2. Researcher
+
+Retrieves relevant evidence and checks for conflicting information.
+
+The Researcher is designed to:
+
+* Ground factual answers in evidence
+* Identify conflicting sources
+* Expose uncertainty
+* Avoid unsupported claims
+
+### 3. Coder / Tool Agent
+
+Handles approved computational tasks through a restricted execution path.
+
+For example:
+
+```text
+(3*4)+10
+      ↓
+Restricted arithmetic evaluator
+      ↓
+22
+```
+
+### 4. Solver
+
+Generates a candidate answer using the task, plan, and available evidence.
+
+### 5. Verifier
+
+Independently evaluates the candidate using multiple checks:
+
+* Computational correctness
+* Factual consistency
+* Logical consistency
+* Evidence grounding
+* Contradiction detection
+* Safety and tool-use checks
+
+### 6. Critic
+
+Acts as the release gate.
+
+The Critic determines whether the verification results are sufficient for the answer to be released.
+
+### 7. Finalizer
+
+Produces the final system decision:
+
+```text
+ACCEPT
+HOLD
+CLARIFY
+```
+
+---
 
 ## ✨ Key Features
 
-* **Independent verification** instead of trusting the generator.
-* **Evidence grounding** for factual answers.
-* **Contradiction detection** when sources disagree.
-* **Self-correction and re-verification** after failed checks.
-* **Ambiguity detection** with `CLARIFY` instead of guessing.
-* **Fail-closed decisions** using `ACCEPT`, `HOLD`, or `CLARIFY`.
-* **Restricted arithmetic execution** using an AST-based evaluator.
-* **Audit trail** showing the reasoning and verification pipeline.
-* **Evaluation suite** for testing reliability across different scenarios.
+* **Multi-agent reasoning pipeline**
+* **Independent answer verification**
+* **Evidence-based factual grounding**
+* **Contradiction detection**
+* **Self-correction and re-verification**
+* **Ambiguity detection**
+* **Fail-closed decision making**
+* **Restricted arithmetic execution**
+* **Safety verification**
+* **Audit trail**
+* **Curated evaluation suite**
+* **Interactive web dashboard**
 
-## 🔧 Major Modifications Made
+---
 
-Compared with the earlier prototype, the current FlashAI version includes:
+## 🔄 Self-Correction
 
-1. **Renamed the project from VeritasMesh to FlashAI** for consistent project and GitHub branding.
-2. **Added the Coder / Tool Agent** as a separate stage in the multi-agent pipeline.
-3. **Fixed arithmetic expression handling** so complete expressions such as `(3*4)+10` are evaluated correctly.
-4. **Added restricted AST-based computation** instead of unsafe `eval()`/`exec()` execution.
-5. **Improved independent verification** with computational, factual, logical, contradiction, and safety checks.
-6. **Added self-correction and re-verification** when verification fails.
-7. **Improved the audit trail** so judges can see why an answer was accepted or blocked.
-8. **Added demonstration cases** for arithmetic, factual reasoning, ambiguity, conflicts, unsupported questions, and unsafe requests.
-9. **Added a regression evaluation suite** to measure verification performance.
+When verification fails, FlashAI does not immediately release the response.
+
+Instead:
+
+```text
+Candidate Answer
+       ↓
+Verification
+       ↓
+     FAIL
+       ↓
+Critic → HOLD
+       ↓
+Self-Correction
+       ↓
+Re-run Reasoning
+       ↓
+Re-verification
+       ↓
+ACCEPT / HOLD
+```
+
+This makes the verification process visible through the application's audit trail.
+
+---
+
+## ⚔️ Contradiction Detection
+
+FlashAI can identify conflicting evidence instead of silently selecting an unsupported answer.
+
+For example, if different evidence sources provide contradictory claims, the system exposes the conflict and prevents an unsupported release.
+
+This is especially important for the hackathon's **reasoning and verification** objective.
+
+---
+
+## 🛡️ Restricted Tool Execution
+
+FlashAI uses a restricted AST-based arithmetic evaluator.
+
+The evaluator:
+
+* Allows approved numeric operations
+* Uses Python's AST parser
+* Does not use `eval()`
+* Does not use `exec()`
+* Does not provide arbitrary shell execution
+* Does not provide arbitrary file execution
+
+The current evaluator is intentionally limited to arithmetic and should not be considered a general-purpose sandbox.
+
+---
 
 ## 🧪 Evaluation
 
-FlashAI currently includes **7 curated evaluation cases** covering:
+FlashAI includes a curated evaluation suite containing **7 test cases** covering:
 
-* Arithmetic
-* Factual reasoning
-* Conflicting evidence
-* Ambiguous requests
-* Misleading input
-* Unsafe requests
-* Unsupported questions
+| Test Case   | Purpose                     |
+| ----------- | --------------------------- |
+| Arithmetic  | Computational verification  |
+| Factual     | Evidence-grounded reasoning |
+| Conflicting | Contradiction handling      |
+| Ambiguous   | Clarification handling      |
+| Misleading  | Error detection             |
+| Unsafe      | Safety verification         |
+| Unsupported | Fail-closed behavior        |
 
 Current baseline:
 
@@ -81,65 +226,244 @@ Current baseline:
 Verification Accuracy: 100.0%
 ```
 
-This is the result on the project's curated test suite and is **not a claim of 100% real-world AI accuracy**.
+> This result represents performance on the project's curated evaluation suite and is **not a claim of 100% real-world AI accuracy**.
 
-## 💻 Run Locally
-
-```cmd
-python -m venv .venv
-.venv\Scripts\activate
-python -m pip install -r requirements.txt
-python -m uvicorn backend.main:app --reload
-```
-
-Open:
-
-```text
-http://127.0.0.1:8000
-```
-
-Run the evaluation:
+Run the evaluation with:
 
 ```cmd
 .venv\Scripts\python evaluation\run.py
 ```
 
-## 🎬 Demo
+---
 
-Recommended demonstrations:
+## 🛠️ Tech Stack
 
-| Input                              | Expected Behavior                      |
-| ---------------------------------- | -------------------------------------- |
-| `(3*4)+10`                         | `ACCEPT` after independent computation |
-| `What is the capital of India?`    | Evidence-grounded answer               |
-| `What is the answer to this?`      | `CLARIFY`                              |
-| `What is the capital of Atlantis?` | `HOLD` due to missing evidence         |
-| Conflicting arithmetic claim       | Contradiction detection                |
-| Unsafe request                     | Blocked / `HOLD`                       |
+### Frontend
 
-## 🔐 Safety
+* HTML
+* CSS
+* JavaScript
+* Three.js
 
-The built-in arithmetic evaluator is intentionally restricted.
+### Backend
 
-It does **not** use `eval()` or `exec()` and does not provide arbitrary shell, file, or network execution.
+* Python
+* FastAPI
+* Uvicorn
 
-For production-grade arbitrary code execution, a separately isolated sandbox with resource, filesystem, and network restrictions would be required.
+### AI / Reasoning
 
-## 🚀 Future Scope
+* Multi-agent architecture
+* Optional API-backed LLM integration
+* Evidence retrieval
+* Independent verification
 
-* PDF/document evidence ingestion
-* Larger evidence collections
-* Vector-based retrieval
-* Source credibility scoring
-* Stronger adversarial verification
-* Expanded evaluation benchmarks
-* Production-grade isolated code execution
-* Persistent audit logs and authentication
+### Security / Execution
+
+* Python AST-based restricted evaluator
+* Safety verification layer
+* Fail-closed release mechanism
+
+### Testing
+
+* Python smoke tests
+* Curated evaluation cases
+
+### Deployment
+
+* Docker
+* Docker Compose
 
 ---
 
-### HackFusion 2026
+## 📁 Project Structure
 
-**Theme 8 — Multi-Agent AI Reasoning & Verification Engine**
+```text
+flashAI/
+│
+├── backend/
+│   ├── agents/
+│   │   ├── planner.py
+│   │   ├── researcher.py
+│   │   ├── coder.py
+│   │   ├── solver.py
+│   │   ├── verifier.py
+│   │   ├── critic.py
+│   │   └── finalizer.py
+│   │
+│   ├── orchestration/
+│   ├── retrieval/
+│   ├── sandbox/
+│   ├── verification/
+│   ├── audit/
+│   ├── llm/
+│   ├── models.py
+│   └── main.py
+│
+├── frontend/
+│   └── index.html
+│
+├── evaluation/
+│   ├── cases/
+│   └── run.py
+│
+├── tests_smoke.py
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+├── .env.example
+├── .gitignore
+└── README.md
+```
 
-**Project: FlashAI**
+---
+
+## 💻 Setup and Installation
+
+### 1. Clone the repository
+
+```cmd
+git clone <YOUR_GITHUB_REPOSITORY_URL>
+cd flashAI
+```
+
+### 2. Create a virtual environment
+
+```cmd
+python -m venv .venv
+```
+
+### 3. Activate the environment
+
+Windows:
+
+```cmd
+.venv\Scripts\activate
+```
+
+### 4. Install dependencies
+
+```cmd
+python -m pip install -r requirements.txt
+```
+
+### 5. Start the application
+
+```cmd
+python -m uvicorn backend.main:app --reload
+```
+
+### 6. Open the application
+
+```text
+http://127.0.0.1:8000
+```
+
+---
+
+## 🔑 Environment Variables
+
+Copy:
+
+```text
+.env.example
+```
+
+to:
+
+```text
+.env
+```
+
+Add the required API configuration if the optional AI/web-search functionality is being used.
+
+**Never commit `.env` or API keys to GitHub.**
+
+---
+
+## 🔌 API
+
+### Health Check
+
+```text
+GET /api/health
+```
+
+Returns backend status and AI configuration information.
+
+### Submit Task
+
+```text
+POST /api/tasks
+```
+
+Example request:
+
+```json
+{
+  "task": "Calculate: (3*4)+10"
+}
+```
+
+The response contains the final decision together with verification results, evidence, revision information, and the audit trail.
+
+---
+
+## 🗄️ Database
+
+FlashAI currently does **not require a persistent database**.
+
+The current implementation uses project files/local data for:
+
+* Evaluation cases
+* Evidence
+* Runtime audit information
+
+Therefore, database schema and migration files are not applicable to the current implementation.
+
+---
+
+## 👥 Team
+
+### HackFusion 2026 — Theme 8
+
+**Project:** FlashAI
+
+**Team Name:** `BugBusters`
+
+**Team Members:**
+
+* `Jeevana Sai`
+* `Pavan Kumar`
+* `Chinmayi BV`
+* `Jatish`
+
+---
+
+## 🏁 Conclusion
+
+FlashAI demonstrates a verification-first approach to multi-agent AI systems.
+
+Rather than assuming that generated answers are correct, the system attempts to establish reliability through:
+
+```text
+Generation
+    ↓
+Evidence
+    ↓
+Independent Verification
+    ↓
+Contradiction Detection
+    ↓
+Self-Correction
+    ↓
+Release Decision
+```
+
+The objective is not to claim perfect AI accuracy, but to build a system that **recognizes when an answer cannot be reliably established and avoids presenting uncertainty as fact**.
+
+---
+
+**HackFusion 2026 | Theme 8 — Multi-Agent AI Reasoning & Verification Engine**
+
+**FlashAI**
