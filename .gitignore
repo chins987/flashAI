@@ -1,5 +1,52 @@
+# Python virtual environment
+
 .venv/
-__pycache__/
-*.pyc
-.env
+venv/
+env/
+
+# Python cache
+
+**pycache**/
+*.py[cod]
 .pytest_cache/
+.mypy_cache/
+
+# Environment variables / secrets
+
+.env
+.env.*
+!.env.example
+
+# Node.js dependencies
+
+node_modules/
+
+# Build / distribution files
+
+build/
+dist/
+*.egg-info/
+
+# IDE / editor files
+
+.vscode/
+.idea/
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# Logs
+
+*.log
+
+# Coverage
+
+.coverage
+htmlcov/
+
+# Temporary files
+
+*.tmp
+*.temp
